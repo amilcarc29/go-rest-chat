@@ -2,7 +2,6 @@ package repository
 
 import (
 	"go-rest-chat/src/api/domain/check/repository/database"
-	"go-rest-chat/src/api/domain/check/repository/http"
 	"go-rest-chat/src/api/infraestructure/dependencies"
 )
 
@@ -14,13 +13,11 @@ type CheckRepository interface {
 // Repository defines a repository struct
 type Repository struct {
 	*database.CheckDatabaseRepository
-	*http.CheckHTTPRepository
 }
 
 // NewCheckRepository returns a new Check repository
 func NewCheckRepository(container *dependencies.Container) CheckRepository {
 	return &Repository{
 		database.NewRepository(container),
-		http.NewRepository(container),
 	}
 }

@@ -94,8 +94,6 @@ func getValueFromParam(url *url.URL, paramName string, required bool) (uint, err
 // PostMessage handler for posting a message
 func (handler *MessageHandler) PostMessage(w http.ResponseWriter, r *http.Request) {
 	tokenString := r.Header.Get("Authorization")
-// GetResource handler for getting a resource
-// func (handler *MessageHandler) GetResource(w http.ResponseWriter, r *http.Request) {
 
 	var message entities.Message
 	err := json.NewDecoder(r.Body).Decode(&message)
@@ -106,12 +104,6 @@ func (handler *MessageHandler) PostMessage(w http.ResponseWriter, r *http.Reques
 		})
 		return
 	}
-// 	id := mux.Vars(r)["id"]
-// 	resource, err := handler.usecases.GetResource(id)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	}
 
 	messageID, timestamp, err := handler.usecases.PostMessage(tokenString, message)
 	if err != nil && err.Error() == "not authenticated" {
@@ -135,39 +127,3 @@ func (handler *MessageHandler) PostMessage(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(&newMessageOutput)
 	w.WriteHeader(http.StatusOK)
 }
-// 	json.NewEncoder(w).Encode(&resource)
-// 	w.WriteHeader(http.StatusOK)
-// }
-
-// CreateResource handler to create a resource
-// func (handler *MessageHandler) CreateResource(w http.ResponseWriter, r *http.Request) {
-
-// 	var resource entities.Resource
-// 		w.WriteHeader(http.StatusBadRequest)
-// 	json.NewDecoder(r.Body).Decode(&resource)
-// 	newID, err := handler.usecases.CreateResource(resource)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	resourceIDResponse := struct {
-// 		ID uint `json:"id"`
-// 	}{
-// 		ID: newID,
-// 	}
-
-// 	json.NewEncoder(w).Encode(&resourceIDResponse)
-// 	w.WriteHeader(http.StatusCreated)
-// }
-
-// DeleteResource handler to delete a resource
-// func (handler *MessageHandler) DeleteResource(w http.ResponseWriter, r *http.Request) {
-
-// 		w.WriteHeader(http.StatusBadRequest)
-// 	id := mux.Vars(r)["id"]
-// 	err := handler.usecases.DeleteResource(id)
-// 	if err != nil {
-// 		return
-// 	}
-// 	w.WriteHeader(http.StatusOK)
-// }

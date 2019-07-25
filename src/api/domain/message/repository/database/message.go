@@ -37,30 +37,3 @@ func (repository *MessageDatabaseRepository) PutMessage(message entities.Message
 	}
 	return message.ID, message.Timestamp, nil
 }
-// GetResource returns the resource found
-// func (repository *MessageDatabaseRepository) GetResource(id string) (entities.Message, error) {
-// 	var message entities.Message
-// 	idConverted, _ := strconv.Atoi(id)
-// 	err := repository.database.First(&message, idConverted).Error
-// 	if message.ID == 0 || err != nil {
-// 		return message, fmt.Errorf(errResourceNotFound, id)
-// 	}
-// 	return message, nil
-// }
-
-// PutResource inserts a new resource
-// func (repository *MessageDatabaseRepository) PutResource(resource entities.Message) (uint, error) {
-// 	if err := repository.database.Create(&resource).Error; err != nil {
-// 		return 0, err
-// 	}
-// 	return resource.ID, nil
-// }
-
-// DeleteResource deletes a resource
-// func (repository *MessageDatabaseRepository) DeleteResource(id string) error {
-// 	resource, _ := repository.GetResource(id)
-// 	if err := repository.database.Delete(&resource).Error; err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
