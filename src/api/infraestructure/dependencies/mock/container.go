@@ -37,7 +37,6 @@ func NewMockContainer() (*Container, error) {
 		return nil, err
 	}
 
-	gormDB.LogMode(true)
 	routerHandler := mux.NewRouter()
 
 	return &Container{

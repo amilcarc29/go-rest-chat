@@ -38,7 +38,6 @@ func NewContainer() (*Container, error) {
 		return nil, err
 	}
 	fmt.Println("DB connected successfully.")
-	db.LogMode(true)
 
 	routerHandler := mux.NewRouter()
 	client := resty.New()
@@ -82,7 +81,6 @@ func NewMockContainer() (*Container, error) {
 		return nil, err
 	}
 
-	gormDB.LogMode(true)
 	routerHandler := mux.NewRouter()
 
 	return &Container{
