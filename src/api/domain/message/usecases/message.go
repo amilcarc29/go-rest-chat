@@ -3,6 +3,7 @@ package usecases
 import (
 	"errors"
 	"go-rest-chat/src/api/domain/message/entities"
+	"time"
 )
 
 // GetMessages returns the messages
@@ -13,6 +14,10 @@ func (usecases *UseCases) GetMessages(token string, recipient, start, limit uint
 	}
 	if !authenticated.Authenticated {
 		return nil, errors.New("not authenticated")
+	}
+
+	if limit == 0 {
+		limit = 100
 	}
 
 	messages, err := usecases.messageRepository.GetMessages(authenticated.ID, recipient, start, limit)

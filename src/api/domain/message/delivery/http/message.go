@@ -52,9 +52,6 @@ func (handler *MessageHandler) GetMessages(w http.ResponseWriter, r *http.Reques
 		})
 		return
 	}
-	if limit == 0 {
-		limit = 100
-	}
 
 	messages, err := handler.usecases.GetMessages(tokenString, recipient, start, limit)
 	if err != nil && err.Error() == "not authenticated" {
