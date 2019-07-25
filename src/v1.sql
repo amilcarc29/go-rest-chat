@@ -10,10 +10,11 @@ CREATE TABLE users (
 -- Creates a new table for messages
 CREATE TABLE messages (
 	id INT(11) NOT NULL AUTO_INCREMENT,
-	sender_id INT(11) NOT NULL,
-	recipient_id INT(11) NOT NULL,
+	timestamp DATETIME NOT NULL,
+	sender INT(11) NOT NULL,
+	recipient INT(11) NOT NULL,
 	content VARCHAR(255) NOT NULL,
 	PRIMARY KEY(id),
-	FOREIGN KEY (sender_id) REFERENCES users(id),
-	FOREIGN KEY (recipient_id) REFERENCES users(id),
+	FOREIGN KEY (sender) REFERENCES users(id),
+	FOREIGN KEY (recipient) REFERENCES users(id),
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_unicode_ci;

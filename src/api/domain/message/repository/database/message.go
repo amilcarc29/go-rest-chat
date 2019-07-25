@@ -12,7 +12,7 @@ const (
 // GetMessages returns all the messages found
 func (repository *MessageDatabaseRepository) GetMessages(sender, recipient, start, limit uint) ([]entities.Message, error) {
 	var messages []entities.Message
-	if err := repository.database.Where("sender_id = ? AND recipient_id = ? AND id >= ?", sender, recipient, start).Limit(limit).Find(&messages).Error; err != nil {
+	if err := repository.database.Where("sender = ? AND recipient = ? AND id >= ?", sender, recipient, start).Limit(limit).Find(&messages).Error; err != nil {
 		return nil, err
 	}
 	for i := range messages {
