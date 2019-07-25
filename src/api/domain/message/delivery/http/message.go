@@ -68,8 +68,12 @@ func (handler *MessageHandler) GetMessages(w http.ResponseWriter, r *http.Reques
 		})
 		return
 	}
-
-	json.NewEncoder(w).Encode(&messages)
+	messagesOutput := struct {
+		Messages []entities.Message `json:"messages"`
+	}{
+		Messages: messages,
+	}
+	json.NewEncoder(w).Encode(&messagesOutput)
 	w.WriteHeader(http.StatusOK)
 }
 
