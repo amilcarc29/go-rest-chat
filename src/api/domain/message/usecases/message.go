@@ -27,6 +27,15 @@ func (usecases *UseCases) GetMessages(token string, recipient, start, limit uint
 	return messages, nil
 }
 
+// PostMessage posts a new message
+func (usecases *UseCases) PostMessage(token string, message entities.Message) (uint, time.Time, error) {
+	authenticated, err := usecases.messageRepository.IsAuthenticated(token)
+	if err != nil {
+		return 0, time.Time{}, err
+	}
+	if !authenticated.Authenticated {
+		return 0, time.Time{}, errors.New("not authenticated")
+	}
 // GetResource returns the resource
 // func (usecases *UseCases) GetResource(id string) (*entities.Resource, error) {
 // 	resource, err := usecases.resourceRepository.GetResource(id)
@@ -36,6 +45,12 @@ func (usecases *UseCases) GetMessages(token string, recipient, start, limit uint
 // 	return &resource, nil
 // }
 
+	messageID, timestamp, err := usecases.messageRepository.PutMessage(message)
+	if err != nil {
+		return 0, time.Time{}, err
+	}
+	return messageID, timestamp, nil
+}
 // CreateResource creates a new resource
 // func (usecases *UseCases) CreateResource(resource entities.Resource) (uint, error) {
 // 	id, err := usecases.resourceRepository.PutResource(resource)

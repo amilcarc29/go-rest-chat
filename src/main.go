@@ -32,7 +32,7 @@ func main() {
 	routerHandler.HandleFunc("/authenticated", userHandler.AuthenticatedUser).Methods("GET")
 
 	// Messages
-	// routerHandler.HandleFunc("/messages", messageHandler.LoginUser).Methods("POST")
+	routerHandler.HandleFunc("/messages", messageHandler.PostMessage).Methods("POST")
 	routerHandler.HandleFunc("/messages", messageHandler.GetMessages).Methods("GET")
 
 	// Bind to a port and pass our router in

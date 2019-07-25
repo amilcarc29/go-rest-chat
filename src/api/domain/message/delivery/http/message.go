@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // GetMessages handler for getting messages
@@ -90,9 +91,21 @@ func getValueFromParam(url *url.URL, paramName string, required bool) (uint, err
 	return uint(value), nil
 }
 
+// PostMessage handler for posting a message
+func (handler *MessageHandler) PostMessage(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
 // GetResource handler for getting a resource
 // func (handler *MessageHandler) GetResource(w http.ResponseWriter, r *http.Request) {
 
+	var message entities.Message
+	err := json.NewDecoder(r.Body).Decode(&message)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(entities.Error{
+			Error: err.Error(),
+		})
+		return
+	}
 // 	id := mux.Vars(r)["id"]
 // 	resource, err := handler.usecases.GetResource(id)
 // 	if err != nil {
@@ -100,6 +113,28 @@ func getValueFromParam(url *url.URL, paramName string, required bool) (uint, err
 // 		return
 // 	}
 
+	messageID, timestamp, err := handler.usecases.PostMessage(tokenString, message)
+	if err != nil && err.Error() == "not authenticated" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(entities.Error{
+			Error: err.Error(),
+		})
+		return
+	}
+	newMessageOutput := struct {
+		ID        uint      `json:"id"`
+		Timestamp time.Time `json:"timestamp"`
+	}{
+		ID:        messageID,
+		Timestamp: timestamp,
+	}
+	json.NewEncoder(w).Encode(&newMessageOutput)
+	w.WriteHeader(http.StatusOK)
+}
 // 	json.NewEncoder(w).Encode(&resource)
 // 	w.WriteHeader(http.StatusOK)
 // }

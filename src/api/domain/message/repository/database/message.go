@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"go-rest-chat/src/api/domain/message/entities"
+	"time"
 )
 
 const (
@@ -23,6 +24,19 @@ func (repository *MessageDatabaseRepository) GetMessages(sender, recipient, star
 	return messages, nil
 }
 
+// PutMessage creates a new message
+func (repository *MessageDatabaseRepository) PutMessage(message entities.Message) (uint, time.Time, error) {
+	content, err := json.Marshal(message.Content)
+	if err != nil {
+		return 0, time.Time{}, err
+	}
+	message.ContentString = string(content)
+	message.Timestamp = time.Now()
+	if err := repository.database.Create(&message).Error; err != nil {
+		return 0, time.Time{}, err
+	}
+	return message.ID, message.Timestamp, nil
+}
 // GetResource returns the resource found
 // func (repository *MessageDatabaseRepository) GetResource(id string) (entities.Message, error) {
 // 	var message entities.Message

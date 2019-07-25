@@ -6,11 +6,13 @@ import (
 	"go-rest-chat/src/api/domain/message/repository/http"
 	userEntities "go-rest-chat/src/api/domain/user/entities"
 	"go-rest-chat/src/api/infraestructure/dependencies"
+	"time"
 )
 
 // MessageRepository defines an interface
 type MessageRepository interface {
 	GetMessages(sender, recipient, start, limit uint) ([]entities.Message, error)
+	PutMessage(message entities.Message) (uint, time.Time, error)
 	// GetResource(id string) (entities.Message, error)
 	// PutResource(resource entities.Message) (uint, error)
 	// DeleteResource(id string) error
