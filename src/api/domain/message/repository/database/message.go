@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"go-rest-chat/src/api/domain/message/entities"
 )
 
@@ -15,9 +16,34 @@ func (repository *MessageDatabaseRepository) GetMessages(sender, recipient, star
 		return nil, err
 	}
 	for i := range messages {
-		repository.database.Model(messages[i]).Related(&messages[i].Content)
+		var dbContent entities.DBContent
+		if err := repository.database.Where("id = ?", messages[i].ContentID).First(&dbContent).Error; err != nil {
+			return nil, err
+		}
+		messages[i].Content = getMessageContent(dbContent)
 	}
 	return messages, nil
+}
+
+func getMessageContent(dbContent entities.DBContent) entities.Content {
+	switch dbContent.Type {
+	case "text":
+		var textContent entities.Content
+		json.Unmarshal([]byte(dbContent.Metadata), &textContent)
+		textContent.Type = dbContent.Type
+		return textContent
+	case "image":
+		var imageContent entities.Content
+		json.Unmarshal([]byte(dbContent.Metadata), &imageContent)
+		imageContent.Type = dbContent.Type
+		return imageContent
+	case "video":
+		var videoContent entities.Content
+		json.Unmarshal([]byte(dbContent.Metadata), &videoContent)
+		videoContent.Type = dbContent.Type
+		return videoContent
+	}
+	return entities.Content{}
 }
 
 // GetResource returns the resource found

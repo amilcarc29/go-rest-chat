@@ -14,7 +14,7 @@ CREATE TABLE users (
 CREATE TABLE contents (
 	id INT(11) NOT NULL AUTO_INCREMENT,
 	type ENUM('text', 'image', 'video') NOT NULL,
-	text VARCHAR(255) NOT NULL,
+	metadata VARCHAR(255) NOT NULL,
 	created_at DATETIME NULL,
 	updated_at DATETIME NULL,
 	deleted_at DATETIME NULL,
