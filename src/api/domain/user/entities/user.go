@@ -1,9 +1,5 @@
 package entities
 
-import (
-	"github.com/jinzhu/gorm"
-)
-
 // UserLogin struct for user login
 type UserLogin struct {
 	Username string `json:"username"`
@@ -12,7 +8,7 @@ type UserLogin struct {
 
 // User struct for user
 type User struct {
-	gorm.Model
+	ID       uint   `gorm:"primary_key" json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }

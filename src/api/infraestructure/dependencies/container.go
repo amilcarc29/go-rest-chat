@@ -3,15 +3,13 @@ package dependencies
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	"github.com/go-resty/resty"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Container defines a container for dependencies
@@ -22,17 +20,11 @@ type Container struct {
 	mock          *sqlmock.Sqlmock
 }
 
-// export DBUsername=root
-// export DBPassword=
-// export DBHost=127.0.0.1:3306
-// export DBName=db_test
-
 // NewContainer returns a container with the dependencies
 func NewContainer() (*Container, error) {
 	db, err := gorm.Open(
-		"mysql",
-		fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=true", os.Getenv("DBUsername"),
-			os.Getenv("DBPassword"), os.Getenv("DBHost"), os.Getenv("DBName")),
+		"sqlite3",
+		"challenge.db",
 	)
 	if err != nil {
 		return nil, err
