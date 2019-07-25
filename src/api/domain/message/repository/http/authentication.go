@@ -2,7 +2,9 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"go-rest-chat/src/api/domain/user/entities"
+	"strings"
 )
 
 // IsAuthenticated returns if the user is authenticated
@@ -10,8 +12,16 @@ func (repository *MessageHTTPRepository) IsAuthenticated(token string) (entities
 
 	var authenticated entities.AuthenticatedResponse
 
+	if strings.Contains(token, "Bearer") || strings.Contains(token, "bearer") {
+		tokenSplitted := strings.SplitAfter(token, " ")
+		if len(tokenSplitted) < 1 {
+			return entities.AuthenticatedResponse{}, errors.New("invalid token")
+		}
+		token = tokenSplitted[1]
+	}
+
 	resp, err := repository.client.R().
-		SetHeader("Authorization", token).
+		SetAuthToken(token).
 		Get("http://127.0.0.1:8080/authenticated")
 	if err != nil {
 		return authenticated, err

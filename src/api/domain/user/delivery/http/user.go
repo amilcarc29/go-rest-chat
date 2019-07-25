@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"go-rest-chat/src/api/domain/user/entities"
 	"net/http"
+	"strings"
 )
 
 // CreateUser handler to register a new user
@@ -65,6 +66,18 @@ func (handler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 func (handler *UserHandler) AuthenticatedUser(w http.ResponseWriter, r *http.Request) {
 
 	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") || strings.Contains(tokenString, "bearer") {
+		tokenSplitted := strings.SplitAfter(tokenString, " ")
+		if len(tokenSplitted) < 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(entities.Error{
+				Error: "invalid token",
+			})
+			return
+		}
+		tokenString = tokenSplitted[1]
+	}
+
 	authenticated, err := handler.usecases.AuthenticatedUser(tokenString)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
