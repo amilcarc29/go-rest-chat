@@ -31,7 +31,7 @@ func Test_GetResources_Success(t *testing.T) {
 		AddRow(uint(2), date, senderID, recipientID, `{"type":"image","url":"imgurl.com","height":123,"width":123}`).
 		AddRow(uint(3), date, senderID, recipientID, `{"type": "text","text": "text test 1"}`)
 
-	queryQuoted := regexp.QuoteMeta("SELECT * FROM `messages` WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2")
+	queryQuoted := regexp.QuoteMeta(`SELECT * FROM "messages" WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2`)
 	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnRows(rows)
 
 	// Then
@@ -54,7 +54,7 @@ func Test_GetResources_NoResults_Success(t *testing.T) {
 	limit := uint(2)
 	rows := sqlmock.NewRows([]string{"id", "timestamp", "sender", "recipient", "content"})
 
-	queryQuoted := regexp.QuoteMeta("SELECT * FROM `messages` WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2")
+	queryQuoted := regexp.QuoteMeta(`SELECT * FROM "messages" WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2`)
 	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnRows(rows)
 
 	// Then
@@ -74,7 +74,7 @@ func Test_GetResources_NoResults_Fail(t *testing.T) {
 	start := uint(4)
 	limit := uint(2)
 
-	queryQuoted := regexp.QuoteMeta("SELECT * FROM `messages` WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2")
+	queryQuoted := regexp.QuoteMeta(`SELECT * FROM "messages" WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2`)
 	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnError(errors.New("forced for test"))
 
 	// Then
