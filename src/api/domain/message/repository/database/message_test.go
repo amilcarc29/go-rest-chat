@@ -1,103 +1,122 @@
 package database_test
 
-// import (
-// 	"errors"
-// 	"go-rest-chat/src/api/domain/message/repository"
-// 	"go-rest-chat/src/api/infraestructure/dependencies"
-// 	"testing"
-// 	"time"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"go-rest-chat/src/api/domain/message/entities"
+	"go-rest-chat/src/api/domain/message/repository"
+	"go-rest-chat/src/api/infraestructure/dependencies"
+	"regexp"
+	"testing"
+	"time"
 
-// 	"github.com/DATA-DOG/go-sqlmock"
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
+)
 
-// /*
-// GetResourceByID Stmt
-// ^SELECT (.*) FROM `resources`  WHERE `resources`.`deleted_at` IS NULL AND ((`resources`.`id` = 7)) ORDER BY `resources`.`id` AS
-// C LIMIT 1
+func Test_GetResources_Success(t *testing.T) {
+	// Given
+	assert, container, repository := getDependenciesMock(t)
+	defer container.Database().Close()
 
-// GetResources Stmt
-// ^SELECT (.*) FROM `resources`  WHERE `resources`.`deleted_at` IS NULL
-// */
+	// When
+	dateString := "2019-07-25T20:49:00Z"
+	date, _ := time.Parse(time.RFC3339, dateString)
+	senderID := uint(1)
+	recipientID := uint(2)
+	start := uint(2)
+	limit := uint(2)
+	rows := sqlmock.NewRows([]string{"id", "timestamp", "sender", "recipient", "content"}).
+		AddRow(uint(2), date, senderID, recipientID, `{"type":"image","url":"imgurl.com","height":123,"width":123}`).
+		AddRow(uint(3), date, senderID, recipientID, `{"type": "text","text": "text test 1"}`)
 
-// func Test_GetResources_OneResult_Success(t *testing.T) {
-// 	// Given
-// 	assert, container, repository := getDependenciesMock(t)
-// 	defer container.Database().Close()
+	queryQuoted := regexp.QuoteMeta("SELECT * FROM `messages` WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2")
+	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnRows(rows)
 
-// 	// When
-// 	dateString := "2019-06-17T23:35:59Z"
-// 	layout := "2014-09-12T11:45:26.371Z"
-// 	date, err := time.Parse(layout, dateString)
-// 	rows := sqlmock.NewRows([]string{"link", "name", "description", "author", "tags", "created_at", "updated_at", "deleted_at", "id"}).
-// 		AddRow("link_test", "name_test", "description_test", "author_test", "tags_test", date, date, date, 1)
-// 	(*container.SQLMock()).ExpectQuery("^SELECT (.*) FROM `resources`  WHERE `resources`.`deleted_at` IS NULL").WillReturnRows(rows)
+	// Then
+	messages, err := repository.GetMessages(senderID, recipientID, start, limit)
+	assert.Len(messages, 2)
+	assert.Equal(uint(2), messages[0].ID)
+	assert.Equal("image", messages[0].Content.Type)
+	assert.Nil(err)
+}
 
-// 	// Then
-// 	resources, err := repository.GetResources()
+func Test_GetResources_NoResults_Success(t *testing.T) {
+	// Given
+	assert, container, repository := getDependenciesMock(t)
+	defer container.Database().Close()
 
-// 	assert.Len(resources, 1)
-// 	assert.Equal(uint(1), resources[0].ID)
-// 	assert.Nil(err)
-// }
+	// When
+	senderID := uint(1)
+	recipientID := uint(2)
+	start := uint(4)
+	limit := uint(2)
+	rows := sqlmock.NewRows([]string{"id", "timestamp", "sender", "recipient", "content"})
 
-// func Test_GetResources_NoResult_Success(t *testing.T) {
-// 	// Given
-// 	assert, container, repository := getDependenciesMock(t)
-// 	defer container.Database().Close()
+	queryQuoted := regexp.QuoteMeta("SELECT * FROM `messages` WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2")
+	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnRows(rows)
 
-// 	// When
-// 	rows := sqlmock.NewRows([]string{"link", "name", "description", "author", "tags", "created_at", "updated_at", "deleted_at", "id"})
-// 	(*container.SQLMock()).ExpectQuery("^SELECT (.*) FROM `resources`  WHERE `resources`.`deleted_at` IS NULL").WillReturnRows(rows)
+	// Then
+	messages, err := repository.GetMessages(senderID, recipientID, start, limit)
+	assert.Len(messages, 0)
+	assert.Nil(err)
+}
 
-// 	// Then
-// 	resources, err := repository.GetResources()
+func Test_GetResources_NoResults_Fail(t *testing.T) {
+	// Given
+	assert, container, repository := getDependenciesMock(t)
+	defer container.Database().Close()
 
-// 	assert.Len(resources, 0)
-// 	assert.Nil(err)
-// }
+	// When
+	senderID := uint(1)
+	recipientID := uint(2)
+	start := uint(4)
+	limit := uint(2)
 
-// func Test_GetResources_NoResult_Fail(t *testing.T) {
-// 	// Given
-// 	assert, container, repository := getDependenciesMock(t)
-// 	defer container.Database().Close()
+	queryQuoted := regexp.QuoteMeta("SELECT * FROM `messages` WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2")
+	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnError(errors.New("forced for test"))
 
-// 	// When
-// 	(*container.SQLMock()).ExpectQuery("^SELECT (.*) FROM `resources`  WHERE `resources`.`deleted_at` IS NULL").WillReturnError(errors.New("forced for test"))
+	// Then
+	messages, err := repository.GetMessages(senderID, recipientID, start, limit)
+	assert.Len(messages, 0)
+	assert.NotNil(err)
+	assert.EqualError(err, "forced for test")
+}
 
-// 	// Then
-// 	resources, err := repository.GetResources()
+func Test_PutMessage_Success(t *testing.T) {
+	// Given
+	assert, container, repository := getDependenciesMock(t)
+	defer container.Database().Close()
 
-// 	assert.Len(resources, 0)
-// 	assert.NotNil(err)
-// 	assert.EqualError(err, "forced for test")
-// }
+	// When
+	dateString := "2019-07-12T20:49:00Z"
+	date, _ := time.Parse(time.RFC3339, dateString)
+	senderID := uint(1)
+	recipientID := uint(2)
+	contentString := `{"type":"text","text":"test"}`
+	var content entities.Content
+	json.Unmarshal([]byte(contentString), &content)
+	message := entities.Message{
+		Sender:    senderID,
+		Recipient: recipientID,
+		Content:   content,
+	}
 
-// func Test_GetResourceByID_Success(t *testing.T) {
-// 	// Given
-// 	assert, container, repository := getDependenciesMock(t)
-// 	defer container.Database().Close()
+	queryQuoted := regexp.QuoteMeta(`INSERT INTO "messages" ("timestamp","sender","recipient","content") VALUES (?,?,?,?) RETURNING "messages"."id"`)
+	(*container.SQLMock()).ExpectBegin()
+	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(date, senderID, recipientID, contentString).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-// 	// When
-// 	dateString := "2019-06-17T23:35:59Z"
-// 	layout := "2014-09-12T11:45:26.371Z"
-// 	date, err := time.Parse(layout, dateString)
-// 	rows := sqlmock.NewRows([]string{"link", "name", "description", "author", "tags", "created_at", "updated_at", "id"}).
-// 		AddRow("link_test", "name_test", "description_test", "author_test", "tags_test", date, date, 1)
-// 	(*container.SQLMock()).ExpectQuery("^SELECT (.*) FROM `resources`  WHERE `resources`.`deleted_at` IS NULL AND ((`resources`.`id` = (.+))) ORDER BY `resources`.`id` ASC LIMIT 1").WillReturnRows(rows)
+	// Then
+	messageID, _, err := repository.PutMessage(container.Clock().Now(), message)
+	assert.Nil(err)
+	fmt.Println(messageID)
+}
 
-// 	// Then
-// 	resource, err := repository.GetResource("1")
-
-// 	assert.NotNil(resource)
-// 	assert.Equal(uint(1), resource.ID)
-// 	assert.Nil(err)
-// }
-
-// func getDependenciesMock(t *testing.T) (*assert.Assertions, *dependencies.Container, repository.ResourceRepository) {
-// 	assert := assert.New(t)
-// 	mockContainer, err := dependencies.NewMockContainer()
-// 	assert.Nil(err)
-// 	repository := repository.NewResourceRepository(mockContainer)
-// 	return assert, mockContainer, repository
-// }
+func getDependenciesMock(t *testing.T) (*assert.Assertions, *dependencies.Container, repository.MessageRepository) {
+	assert := assert.New(t)
+	mockContainer, err := dependencies.NewMockContainer()
+	assert.Nil(err)
+	repository := repository.NewMessageRepository(mockContainer)
+	return assert, mockContainer, repository
+}
