@@ -25,13 +25,13 @@ func (repository *MessageDatabaseRepository) GetMessages(sender, recipient, star
 }
 
 // PutMessage creates a new message
-func (repository *MessageDatabaseRepository) PutMessage(message entities.Message) (uint, time.Time, error) {
+func (repository *MessageDatabaseRepository) PutMessage(now time.Time, message entities.Message) (uint, time.Time, error) {
 	content, err := json.Marshal(message.Content)
 	if err != nil {
 		return 0, time.Time{}, err
 	}
 	message.ContentString = string(content)
-	message.Timestamp = time.Now()
+	message.Timestamp = now
 	if err := repository.database.Create(&message).Error; err != nil {
 		return 0, time.Time{}, err
 	}

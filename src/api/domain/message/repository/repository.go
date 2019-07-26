@@ -12,7 +12,7 @@ import (
 // MessageRepository defines an interface
 type MessageRepository interface {
 	GetMessages(sender, recipient, start, limit uint) ([]entities.Message, error)
-	PutMessage(message entities.Message) (uint, time.Time, error)
+	PutMessage(now time.Time, message entities.Message) (uint, time.Time, error)
 	IsAuthenticated(token string) (userEntities.AuthenticatedResponse, error)
 }
 

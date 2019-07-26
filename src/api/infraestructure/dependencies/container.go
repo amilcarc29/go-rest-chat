@@ -3,6 +3,7 @@ package dependencies
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/go-resty/resty"
 
@@ -18,6 +19,7 @@ type Container struct {
 	client        *resty.Client
 	routerHandler *mux.Router
 	mock          *sqlmock.Sqlmock
+	clock         Clock
 }
 
 // NewContainer returns a container with the dependencies
@@ -30,6 +32,7 @@ func NewContainer() (*Container, error) {
 		return nil, err
 	}
 	fmt.Println("DB connected successfully.")
+	db.LogMode(true)
 
 	routerHandler := mux.NewRouter()
 	client := resty.New()
@@ -38,6 +41,7 @@ func NewContainer() (*Container, error) {
 		db:            db,
 		client:        client,
 		routerHandler: routerHandler,
+		clock:         NewClock(),
 	}, nil
 }
 
@@ -68,7 +72,7 @@ func NewMockContainer() (*Container, error) {
 		return nil, err
 	}
 
-	gormDB, err := gorm.Open("mysql", db)
+	gormDB, err := gorm.Open("sqlite3", db)
 	if err != nil {
 		return nil, err
 	}
@@ -79,10 +83,48 @@ func NewMockContainer() (*Container, error) {
 		db:            gormDB,
 		routerHandler: routerHandler,
 		mock:          &mock,
+		clock:         NewClockMock(),
 	}, nil
 }
 
 // SQLMock returns SQL mock
 func (container *Container) SQLMock() *sqlmock.Sqlmock {
 	return container.mock
+}
+
+type Clock interface {
+	Now() time.Time
+}
+
+type clock struct {
+	Clock
+}
+
+func NewClock() Clock {
+	return &clock{}
+}
+
+func (clock *clock) Now() time.Time {
+	return time.Now()
+}
+
+type mock struct {
+	Clock
+	nowDateTime time.Time
+}
+
+func NewClockMock() Clock {
+	dateString := "2019-07-12T20:49:00Z"
+	date, _ := time.Parse(time.RFC3339, dateString)
+	return &mock{
+		nowDateTime: date,
+	}
+}
+
+func (clock *mock) Now() time.Time {
+	return clock.nowDateTime
+}
+
+func (container *Container) Clock() Clock {
+	return container.clock
 }

@@ -36,8 +36,7 @@ func (usecases *UseCases) PostMessage(token string, message entities.Message) (u
 	if !authenticated.Authenticated {
 		return 0, time.Time{}, errors.New("not authenticated")
 	}
-
-	messageID, timestamp, err := usecases.messageRepository.PutMessage(message)
+	messageID, timestamp, err := usecases.messageRepository.PutMessage(usecases.clock.Now(), message)
 	if err != nil {
 		return 0, time.Time{}, err
 	}
