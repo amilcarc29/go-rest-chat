@@ -1,18 +1,17 @@
 package repository_test
 
 import (
-	"go-rest-chat/src/api/domain/message/repository"
+	"go-rest-chat/src/api/domain/user/repository"
 	"go-rest-chat/src/api/infraestructure/dependencies"
-
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_MessageRepository_Success(t *testing.T) {
+func Test_UserRepository_Success(t *testing.T) {
 	assert := assert.New(t)
 	mockContainer, _ := dependencies.NewMockContainer()
-	repository := repository.NewMessageRepository(mockContainer)
+	repository := repository.NewUserRepository(mockContainer)
 
 	assert.NotNil(repository)
 }

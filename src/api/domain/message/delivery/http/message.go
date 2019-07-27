@@ -57,6 +57,9 @@ func (handler *MessageHandler) GetMessages(w http.ResponseWriter, r *http.Reques
 	messages, err := handler.usecases.GetMessages(tokenString, recipient, start, limit)
 	if err != nil && err.Error() == "not authenticated" {
 		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(entities.Error{
+			Error: "not authenticated",
+		})
 		return
 	}
 	if err != nil {
@@ -108,6 +111,9 @@ func (handler *MessageHandler) PostMessage(w http.ResponseWriter, r *http.Reques
 	messageID, timestamp, err := handler.usecases.PostMessage(tokenString, message)
 	if err != nil && err.Error() == "not authenticated" {
 		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(entities.Error{
+			Error: "not authenticated",
+		})
 		return
 	}
 	if err != nil {

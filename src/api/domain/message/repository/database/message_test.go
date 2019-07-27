@@ -3,15 +3,12 @@ package database_test
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go-rest-chat/src/api/domain/message/entities"
 	"go-rest-chat/src/api/domain/message/repository"
 	"go-rest-chat/src/api/infraestructure/dependencies"
-	"regexp"
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,12 +24,11 @@ func Test_GetResources_Success(t *testing.T) {
 	recipientID := uint(2)
 	start := uint(2)
 	limit := uint(2)
-	rows := sqlmock.NewRows([]string{"id", "timestamp", "sender", "recipient", "content"}).
-		AddRow(uint(2), date, senderID, recipientID, `{"type":"image","url":"imgurl.com","height":123,"width":123}`).
-		AddRow(uint(3), date, senderID, recipientID, `{"type": "text","text": "text test 1"}`)
-
-	queryQuoted := regexp.QuoteMeta(`SELECT * FROM "messages" WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2`)
-	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnRows(rows)
+	rows := []map[string]interface{}{
+		{"id": uint(2), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": `{"type":"image","url":"imgurl.com","height":123,"width":123}`},
+		{"id": uint(3), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": `{"type": "text", "text": "text test 1"}`},
+	}
+	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "messages"`).WithReply(rows)
 
 	// Then
 	messages, err := repository.GetMessages(senderID, recipientID, start, limit)
@@ -52,10 +48,8 @@ func Test_GetResources_NoResults_Success(t *testing.T) {
 	recipientID := uint(2)
 	start := uint(4)
 	limit := uint(2)
-	rows := sqlmock.NewRows([]string{"id", "timestamp", "sender", "recipient", "content"})
-
-	queryQuoted := regexp.QuoteMeta(`SELECT * FROM "messages" WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2`)
-	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnRows(rows)
+	rows := []map[string]interface{}{}
+	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "messages"`).WithReply(rows)
 
 	// Then
 	messages, err := repository.GetMessages(senderID, recipientID, start, limit)
@@ -74,8 +68,7 @@ func Test_GetResources_NoResults_Fail(t *testing.T) {
 	start := uint(4)
 	limit := uint(2)
 
-	queryQuoted := regexp.QuoteMeta(`SELECT * FROM "messages" WHERE (sender = ? AND recipient = ? AND id >= ?) LIMIT 2`)
-	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(senderID, recipientID, start).WillReturnError(errors.New("forced for test"))
+	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "messages"`).WithError(errors.New("forced for test"))
 
 	// Then
 	messages, err := repository.GetMessages(senderID, recipientID, start, limit)
@@ -103,14 +96,12 @@ func Test_PutMessage_Success(t *testing.T) {
 		Content:   content,
 	}
 
-	queryQuoted := regexp.QuoteMeta(`INSERT INTO "messages" ("timestamp","sender","recipient","content") VALUES (?,?,?,?) RETURNING "messages"."id"`)
-	(*container.SQLMock()).ExpectBegin()
-	(*container.SQLMock()).ExpectQuery(queryQuoted).WithArgs(date, senderID, recipientID, contentString).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	container.Catcher().Reset().NewMock().WithQuery(`INSERT INTO "messages" ("timestamp","sender","recipient","content") VALUES (?,?,?,?)`).WithArgs(date, senderID, recipientID, contentString)
 
 	// Then
 	messageID, _, err := repository.PutMessage(container.Clock().Now(), message)
 	assert.Nil(err)
-	fmt.Println(messageID)
+	assert.Equal(uint(5577006791947779410), messageID)
 }
 
 func getDependenciesMock(t *testing.T) (*assert.Assertions, *dependencies.Container, repository.MessageRepository) {

@@ -1,24 +1,23 @@
 package dependencies
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/go-resty/resty"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
+	mocket "github.com/selvatico/go-mocket"
 )
 
 // Container defines a container for dependencies
 type Container struct {
 	db            *gorm.DB
 	client        *resty.Client
+	catcher       *mocket.MockCatcher
 	routerHandler *mux.Router
-	mock          *sqlmock.Sqlmock
 	clock         Clock
 }
 
@@ -60,36 +59,30 @@ func (container *Container) HTTPClient() *resty.Client {
 	return container.client
 }
 
+// Catcher returns mocket catcher
+func (container *Container) Catcher() *mocket.MockCatcher {
+	return container.catcher
+}
+
 // NewMockContainer returns a container mocked
 func NewMockContainer() (*Container, error) {
 
-	var db *sql.DB
-	var err error
-	var mock sqlmock.Sqlmock
+	catcher := mocket.Catcher
+	catcher.Register()
+	catcher.Logging = true
 
-	db, mock, err = sqlmock.New()
-	if err != nil {
-		return nil, err
-	}
-
-	gormDB, err := gorm.Open("sqlite3", db)
-	if err != nil {
-		return nil, err
-	}
+	gormDB, _ := gorm.Open(mocket.DriverName, "connection_string")
 
 	routerHandler := mux.NewRouter()
+	client := resty.New()
 
 	return &Container{
 		db:            gormDB,
 		routerHandler: routerHandler,
-		mock:          &mock,
 		clock:         NewClockMock(),
+		client:        client,
+		catcher:       catcher,
 	}, nil
-}
-
-// SQLMock returns SQL mock
-func (container *Container) SQLMock() *sqlmock.Sqlmock {
-	return container.mock
 }
 
 type Clock interface {

@@ -1,7 +1,7 @@
 package usecases_test
 
 import (
-	"go-rest-chat/src/api/domain/message/usecases"
+	"go-rest-chat/src/api/domain/user/usecases"
 	"go-rest-chat/src/api/infraestructure/dependencies"
 	"testing"
 

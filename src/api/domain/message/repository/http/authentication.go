@@ -14,7 +14,7 @@ func (repository *MessageHTTPRepository) IsAuthenticated(token string) (entities
 
 	if strings.Contains(token, "Bearer") || strings.Contains(token, "bearer") {
 		tokenSplitted := strings.SplitAfter(token, " ")
-		if len(tokenSplitted) < 1 {
+		if len(tokenSplitted) < 2 {
 			return entities.AuthenticatedResponse{}, errors.New("invalid token")
 		}
 		token = tokenSplitted[1]
@@ -28,7 +28,7 @@ func (repository *MessageHTTPRepository) IsAuthenticated(token string) (entities
 	}
 
 	if resp.StatusCode() == 401 {
-		return authenticated, nil
+		return authenticated, errors.New("not authenticated")
 	}
 
 	json.Unmarshal(resp.Body(), &authenticated)
