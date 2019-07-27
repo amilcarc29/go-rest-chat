@@ -24,7 +24,7 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NjQxMDIxMDIsImlkIjoxLCJ1c2VybmFtZSI6InVzZXJuYW1lX3Rlc3QifQ.Fk4DPfljnSBpXtGIbwZSKdTZuY8e95g-6EFVMOUo_00",
+						"value": "{{token}}",
 						"type": "text"
 					}
 				],
@@ -50,6 +50,19 @@
 		},
 		{
 			"name": "Login user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "4c6a704b-2222-4e05-ad24-78eb85c5d7cb",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"token\", jsonData.token)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -152,7 +165,7 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NjQwOTg3NTIsImlkIjoxLCJ1c2VybmFtZSI6InVzZXJuYW1lX3Rlc3QifQ.ZgJmBqLlmiSBqBH1yJn5VuQElCZbC7yo5AZ4ct1CSjY",
+						"value": "{{token}}",
 						"type": "text"
 					}
 				],
@@ -199,13 +212,13 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NjQxMDIxMDIsImlkIjoxLCJ1c2VybmFtZSI6InVzZXJuYW1lX3Rlc3QifQ.Fk4DPfljnSBpXtGIbwZSKdTZuY8e95g-6EFVMOUo_00",
+						"value": "{{token}}",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sender\": 1,\n    \"recipient\": 2,\n    \"content\": {\n        \"type\": \"video\",\n        \"url\": \"www.youtube.com\",\n        \"source\": \"youtube\"\n    }\n}"
+					"raw": "{\n    \"sender\": 1,\n    \"recipient\": 2,\n    \"content\": {\n        \"type\": \"video\",\n        \"url\": \"www.vimeo.com\",\n        \"source\": \"vimeo\"\n    }\n}"
 				},
 				"url": {
 					"raw": "127.0.0.1:8080/messages",
