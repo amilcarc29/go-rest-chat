@@ -3,179 +3,297 @@ package usecases_test
 import (
 	"errors"
 	"go-rest-chat/src/api/domain/user/entities"
+	userRepository "go-rest-chat/src/api/domain/user/repository"
+	"go-rest-chat/src/api/domain/user/repository/database"
+	"go-rest-chat/src/api/domain/user/repository/mocks"
 	"go-rest-chat/src/api/domain/user/usecases"
-	"go-rest-chat/src/api/infraestructure/dependencies"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_CreateUser_Success(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
+func Test_CreateUser(t *testing.T) {
+	ass := assert.New(t)
 
-	// When
-	row := []map[string]interface{}{}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.User{
-		Username: "test",
-		Password: "test",
+	tests := []struct {
+		name       string
+		repository func() userRepository.UserRepository
+		newUser    entities.User
+		asserts    func(id uint, err error)
+	}{
+		{
+			name: "Success",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+
+				repository.PatchGetUser("test", entities.User{}, errors.New(database.ErrUserNotFound))
+
+				newUser := entities.User{
+					Username: "test",
+					Password: "test",
+				}
+				repository.PatchCreateUser(newUser, 1, nil)
+
+				return repository
+			},
+			newUser: entities.User{
+				Username: "test",
+				Password: "test",
+			},
+			asserts: func(id uint, err error) {
+				ass.Equal(uint(1), id)
+				ass.Nil(err)
+			},
+		},
+		{
+			name: "Should Fail - Username already exists",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "test",
+				}
+				repository.PatchGetUser("test", user, nil)
+
+				return repository
+			},
+			newUser: entities.User{
+				Username: "test",
+				Password: "test",
+			},
+			asserts: func(id uint, err error) {
+				ass.Zero(id)
+				ass.NotNil(err)
+				ass.EqualError(err, "Username already exists")
+			},
+		},
+		{
+			name: "Should Fail - Error when getting user",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "test",
+				}
+				repository.PatchGetUser("test", user, errors.New("forced for test"))
+
+				return repository
+			},
+			newUser: entities.User{
+				Username: "test",
+				Password: "test",
+			},
+			asserts: func(id uint, err error) {
+				ass.Zero(id)
+				ass.NotNil(err)
+				ass.EqualError(err, "forced for test")
+			},
+		},
+		{
+			name: "Should Fail - Error inserting in DB",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				repository.PatchGetUser("test", entities.User{}, errors.New(database.ErrUserNotFound))
+
+				newUser := entities.User{
+					Username: "test",
+					Password: "test",
+				}
+				repository.PatchCreateUser(newUser, 0, errors.New("forced for test"))
+				return repository
+			},
+			newUser: entities.User{
+				Username: "test",
+				Password: "test",
+			},
+			asserts: func(id uint, err error) {
+				ass.Zero(id)
+				ass.NotNil(err)
+				ass.EqualError(err, "forced for test")
+			},
+		},
 	}
-	container.Catcher().NewMock().WithQuery(`INSERT INTO "users"`)
 
-	// Then
-	newUserID, err := usecases.CreateUser(user)
-	assert.Nil(err)
-	assert.Equal(uint(5577006791947779410), newUserID)
+	for _, test := range tests {
+		// Given
+		repository := test.repository()
+
+		// When
+		usecases := usecases.NewUseCasesMock(repository)
+		id, err := usecases.CreateUser(test.newUser)
+
+		// Then
+		test.asserts(id, err)
+	}
 }
 
-func Test_CreateUser_UsernameAlreadyExists_Fail(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
+func Test_LoginUser(t *testing.T) {
+	ass := assert.New(t)
 
-	// When
-	row := []map[string]interface{}{
-		{"id": uint(2), "username": "test", "password": "test"},
-	}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.User{
-		Username: "test",
-		Password: "test",
+	tests := []struct {
+		name       string
+		repository func() userRepository.UserRepository
+		loginUser  entities.UserLogin
+		asserts    func(loginResponse *entities.LoginResponse, err error)
+	}{
+		{
+			name: "Success",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu",
+				}
+				repository.PatchGetUser("test", user, nil)
+
+				return repository
+			},
+			loginUser: entities.UserLogin{
+				Username: "test",
+				Password: "test",
+			},
+			asserts: func(loginResponse *entities.LoginResponse, err error) {
+				ass.NotNil(loginResponse)
+				ass.Equal(uint(2), loginResponse.ID)
+				ass.NotZero(loginResponse.Token)
+				ass.Nil(err)
+			},
+		},
+		{
+			name: "Should Fail - Username not found",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+
+				repository.PatchGetUser("test", entities.User{}, errors.New(database.ErrUserNotFound))
+
+				return repository
+			},
+			loginUser: entities.UserLogin{
+				Username: "test",
+				Password: "test",
+			},
+			asserts: func(loginResponse *entities.LoginResponse, err error) {
+				ass.NotNil(err)
+				ass.EqualError(err, "invalid user")
+				ass.Nil(loginResponse)
+			},
+		},
+		{
+			name: "Should Fail - Invalid Password",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu",
+				}
+				repository.PatchGetUser("test", user, nil)
+
+				return repository
+			},
+			loginUser: entities.UserLogin{
+				Username: "test",
+				Password: "invalid_password",
+			},
+			asserts: func(loginResponse *entities.LoginResponse, err error) {
+				ass.Nil(loginResponse)
+				ass.NotNil(err)
+				ass.EqualError(err, "invalid user")
+			},
+		},
 	}
 
-	// Then
-	_, err := usecases.CreateUser(user)
-	assert.EqualError(err, "Username already exists")
+	for _, test := range tests {
+		// Given
+		repository := test.repository()
+
+		// When
+		usecases := usecases.NewUseCasesMock(repository)
+		loginResponse, err := usecases.LoginUser(test.loginUser)
+
+		// Then
+		test.asserts(loginResponse, err)
+	}
 }
 
-func Test_CreateUser_Fail(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
+func Test_AuthenticatedUser(t *testing.T) {
+	ass := assert.New(t)
 
-	// When
-	row := []map[string]interface{}{}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.User{
-		Username: "test",
-		Password: "test",
-	}
-	container.Catcher().NewMock().WithQuery(`INSERT`).WithError(errors.New("forced for test"))
+	tests := []struct {
+		name       string
+		repository func() userRepository.UserRepository
+		token      func() string
+		asserts    func(authenticatedResponse entities.AuthenticatedResponse, err error)
+	}{
+		{
+			name: "Success",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu",
+				}
+				repository.PatchGetUser("test", user, nil)
 
-	// Then
-	_, err := usecases.CreateUser(user)
-	assert.NotNil(err)
-	assert.EqualError(err, "forced for test")
-}
+				return repository
+			},
+			token: func() string {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu",
+				}
+				repository.PatchGetUser("test", user, nil)
+				usecases := usecases.NewUseCasesMock(repository)
+				loginUser := entities.UserLogin{
+					Username: "test",
+					Password: "test",
+				}
+				loginResponse, _ := usecases.LoginUser(loginUser)
+				return loginResponse.Token
+			},
+			asserts: func(authenticatedResponse entities.AuthenticatedResponse, err error) {
+				ass.True(authenticatedResponse.Authenticated)
+				ass.Nil(err)
+			},
+		},
+		{
+			name: "Should Fail - Invalid Token",
+			repository: func() userRepository.UserRepository {
+				repository := mocks.NewMock()
+				user := entities.User{
+					ID:       uint(2),
+					Username: "test",
+					Password: "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu",
+				}
+				repository.PatchGetUser("test", user, nil)
 
-func Test_LoginUser_Success(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
-
-	// When
-	row := []map[string]interface{}{
-		{"id": uint(2), "username": "test", "password": "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu"},
-	}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.UserLogin{
-		Username: "test",
-		Password: "test",
-	}
-
-	// Then
-	loginResponse, err := usecases.LoginUser(user)
-	assert.Nil(err)
-	assert.Equal(uint(2), loginResponse.ID)
-	assert.NotZero(loginResponse.Token)
-}
-
-func Test_LoginUser_UserNotFound_Fail(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
-
-	// When
-	row := []map[string]interface{}{}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.UserLogin{
-		Username: "notfoundtest",
-		Password: "test",
-	}
-
-	// Then
-	loginResponse, err := usecases.LoginUser(user)
-	assert.NotNil(err)
-	assert.EqualError(err, "invalid user")
-	assert.Nil(loginResponse)
-}
-
-func Test_LoginUser_InvalidPassword_Fail(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
-
-	// When
-	row := []map[string]interface{}{
-		{"id": uint(2), "username": "test", "password": "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu"},
-	}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.UserLogin{
-		Username: "test",
-		Password: "invalidpassword",
+				return repository
+			},
+			token: func() string {
+				return "invalid"
+			},
+			asserts: func(authenticatedResponse entities.AuthenticatedResponse, err error) {
+				ass.False(authenticatedResponse.Authenticated)
+				ass.NotNil(err)
+			},
+		},
 	}
 
-	// Then
-	loginResponse, err := usecases.LoginUser(user)
-	assert.NotNil(err)
-	assert.EqualError(err, "invalid user")
-	assert.Nil(loginResponse)
-}
+	for _, test := range tests {
+		// Given
+		repository := test.repository()
 
-func Test_AuthenticatedUser_Success(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
+		// When
+		usecases := usecases.NewUseCasesMock(repository)
+		authenticatedResponse, err := usecases.AuthenticatedUser(test.token())
 
-	// When
-	row := []map[string]interface{}{
-		{"id": uint(2), "username": "test", "password": "$2a$05$hoDkIPIevK0kIXmBK8ilEuz6iKifccSFy9ndir9CU.z/1ZIqy4ZCu"},
+		// Then
+		test.asserts(authenticatedResponse, err)
 	}
-	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "users"`).WithReply(row)
-	user := entities.UserLogin{
-		Username: "test",
-		Password: "test",
-	}
-
-	//Then
-	loginResponse, _ := usecases.LoginUser(user)
-	assert.NotNil(loginResponse)
-	authenticated, err := usecases.AuthenticatedUser(loginResponse.Token)
-	assert.Nil(err)
-	assert.True(authenticated.Authenticated)
-}
-
-func Test_AuthenticatedUser_Fail(t *testing.T) {
-	// Given
-	assert, container, usecases := getDependenciesMock(t)
-	defer closeDependencies(container)
-
-	//Then
-	authenticated, err := usecases.AuthenticatedUser("invalidToken")
-	assert.NotNil(err)
-	assert.False(authenticated.Authenticated)
-}
-
-func getDependenciesMock(t *testing.T) (*assert.Assertions, *dependencies.Container, *usecases.UseCases) {
-	assert := assert.New(t)
-	mockContainer, err := dependencies.NewMockContainer()
-	assert.Nil(err)
-	usecases := usecases.NewUseCases(mockContainer)
-	return assert, mockContainer, usecases
-}
-
-func closeDependencies(container *dependencies.Container) {
-	container.Database().Close()
 }

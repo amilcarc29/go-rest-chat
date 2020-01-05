@@ -8,11 +8,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_NewUseCases_Success(t *testing.T) {
+func Test_NewUseCases(t *testing.T) {
+	// Given
 	assert := assert.New(t)
+
+	// When
 	mockContainer, err := dependencies.NewMockContainer()
 	assert.Nil(err)
 	usecases := usecases.NewUseCases(mockContainer)
 
+	// Then
+	assert.NotNil(usecases)
+}
+
+func TestNewUseCasesMock(t *testing.T) {
+	// Given
+	assert := assert.New(t)
+
+	// When
+	usecases := usecases.NewUseCasesMock(nil, nil)
+
+	// Then
 	assert.NotNil(usecases)
 }

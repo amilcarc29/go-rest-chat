@@ -9,9 +9,13 @@ import (
 )
 
 func Test_UserRepository_Success(t *testing.T) {
+	// Given
 	assert := assert.New(t)
+
+	// When
 	mockContainer, _ := dependencies.NewMockContainer()
 	repository := repository.NewUserRepository(mockContainer)
 
+	// Then
 	assert.NotNil(repository)
 }

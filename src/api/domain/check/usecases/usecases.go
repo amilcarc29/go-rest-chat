@@ -17,3 +17,10 @@ func NewUseCases(container *dependencies.Container) *UseCases {
 		checkRepository: checkRepository,
 	}
 }
+
+// NewUseCasesMock returns a new usecases with repository mocked
+func NewUseCasesMock(checkRepository repository.CheckRepository) *UseCases {
+	return &UseCases{
+		checkRepository: checkRepository,
+	}
+}

@@ -19,3 +19,11 @@ func NewUseCases(container *dependencies.Container) *UseCases {
 		clock:             container.Clock(),
 	}
 }
+
+// NewUseCases returns a new usecases with repository and clock mocked
+func NewUseCasesMock(messageRepository repository.MessageRepository, clock dependencies.Clock) *UseCases {
+	return &UseCases{
+		messageRepository: messageRepository,
+		clock:             clock,
+	}
+}
