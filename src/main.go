@@ -12,7 +12,6 @@ import (
 
 func main() {
 	container, err := dependencies.NewContainer()
-
 	if err != nil {
 		fmt.Printf(err.Error())
 	}
