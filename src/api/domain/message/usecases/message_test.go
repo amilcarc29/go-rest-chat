@@ -26,19 +26,9 @@ func Test_GetMessages_Success(t *testing.T) {
 	recipientID := uint(2)
 	start := uint(2)
 	limit := uint(2)
-	contentMessage1 := entities.Content{
-		Type:   "image",
-		URL:    "imgurl.com",
-		Height: 123,
-		Width:  123,
-	}
-	contentMessage2 := entities.Content{
-		Type: "text",
-		Text: "text test 1",
-	}
 	rows := []map[string]interface{}{
-		{"id": uint(2), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": contentMessage1},
-		{"id": uint(3), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": contentMessage2},
+		{"id": uint(2), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": `{"type":"image","url":"imgurl.com","height":123,"width":123}`},
+		{"id": uint(3), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": `{"type": "text", "text": "text test 1"}`},
 	}
 	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "messages"`).WithReply(rows)
 
@@ -96,19 +86,9 @@ func Test_GetMessages_ApplyingDefaultLimit_Success(t *testing.T) {
 	recipientID := uint(2)
 	start := uint(2)
 	limit := uint(0)
-	contentMessage1 := entities.Content{
-		Type:   "image",
-		URL:    "imgurl.com",
-		Height: 123,
-		Width:  123,
-	}
-	contentMessage2 := entities.Content{
-		Type: "text",
-		Text: "text test 1",
-	}
 	rows := []map[string]interface{}{
-		{"id": uint(2), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": contentMessage1},
-		{"id": uint(3), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": contentMessage2},
+		{"id": uint(2), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": `{"type":"image","url":"imgurl.com","height":123,"width":123}`},
+		{"id": uint(3), "timestamp": date, "sender": senderID, "recipient": recipientID, "content": `{"type": "text", "text": "text test 1"}`},
 	}
 	container.Catcher().Reset().NewMock().WithQuery(`SELECT * FROM "messages"`).WithReply(rows)
 
