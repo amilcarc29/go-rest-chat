@@ -137,16 +137,14 @@ func Test_PostMessage_Success(t *testing.T) {
 	date, _ := time.Parse(time.RFC3339, dateString)
 	senderID := uint(1)
 	recipientID := uint(2)
-
+	contentString := `{"type":"text","text":"test"}`
+	var content entities.Content
+	json.Unmarshal([]byte(contentString), &content)
 	message := entities.Message{
 		Sender:    senderID,
 		Recipient: recipientID,
-		Content: entities.Content{
-			Type: "text",
-			Text: "test",
-		},
+		Content:   content,
 	}
-	contentString := `{"type":"text","text":"test"}`
 	container.Catcher().Reset().NewMock().WithQuery(`INSERT INTO "messages" ("timestamp","sender","recipient","content") VALUES (?,?,?,?)`).WithArgs(date, senderID, recipientID, contentString)
 
 	// Mocks Rest Client

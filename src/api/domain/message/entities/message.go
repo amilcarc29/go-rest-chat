@@ -4,11 +4,12 @@ import "time"
 
 // Message defines a struct that represents a Message
 type Message struct {
-	ID        uint      `gorm:"primary_key" json:"id"`
-	Timestamp time.Time `json:"timestamp"`
-	Sender    uint      `json:"sender"`
-	Recipient uint      `json:"recipient"`
-	Content   Content   `json:"content"`
+	ID            uint      `gorm:"primary_key" json:"id"`
+	Timestamp     time.Time `json:"timestamp"`
+	Sender        uint      `json:"sender"`
+	Recipient     uint      `json:"recipient"`
+	Content       Content   `json:"content"`
+	ContentString string    `gorm:"column:content" json:"-"`
 }
 
 // Content defines a struct for the content of a message
